@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>History - PocketSmart</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <div class="navbar">
+    <div class="brand"><span class="chip"></span> PocketSmart</div>
+    <nav>
+      <a href="/dashboard">Dashboard</a>
+      <a href="/home-planner">Home Planner</a>
+      <a href="/party-planner">Party Planner</a>
+      <a href="/jewelry-planner">Jewelry Planner</a>
+      <a href="/history" style="text-decoration:underline;">History</a>
+      <a href="/logout">Logout</a>
+    </nav>
+  </div>
+
+  <div class="page-header">
+    <h1>Your Recommendation History</h1>
+    <p>View and manage all your previous budget plans and recommendations</p>
+  </div>
+
+  <div class="history-grid">
+    {% if history %}
+      {% for item in history %}
+      <div class="history-card {{ item.recommendation_type }}">
+        <div class="h-top">
+          <span>
+            {% if item.recommendation_type == 'home' %}🏠 Home Interior Budget
+            {% elif item.recommendation_type == 'party' %}🎉 Party Planning Budget
+            {% else %}💎 Jewelry Budget{% endif %}
+          </span>
+        </div>
+        <div class="h-time">{{ item.timestamp[:16].replace('T', ' ') }}</div>
+
+        {% for key, value in item.input_summary.items() %}
+        <div class="h-line"><strong>{{ key.replace('_', ' ') | capitalize }}:</strong>
+          {% if value is iterable and value is not string %}{{ value | join(', ') }}{% else %}{{ value }}{% endif %}
+        </div>
+        {% endfor %}
+
+        <div class="h-line" style="margin-top:8px; color: var(--muted);">{{ item.result_summary }}</div>
+
+        <button class="view-btn" onclick="window.location.href='/history#{{ item.id }}'">🔍 View Full Details</button>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="history-card">
+        <p>No recommendations yet. Try one of the budget planners to get started!</p>
+      </div>
+    {% endif %}
+  </div>
+
+  <footer>
+    <div class="copyright">&copy; 2026 PocketSmart. All rights reserved.</div>
+  </footer>
+</body>
+</html>

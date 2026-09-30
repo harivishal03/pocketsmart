@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard - PocketSmart</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <div class="navbar">
+    <div class="brand"><span class="chip"></span> PocketSmart</div>
+    <nav>
+      <a href="/dashboard">Dashboard</a>
+      <a href="/home-planner">Home Planner</a>
+      <a href="/party-planner">Party Planner</a>
+      <a href="/jewelry-planner">Jewelry Planner</a>
+      <a href="/history">History</a>
+      <a href="/logout">Logout</a>
+    </nav>
+  </div>
+
+  <div class="dash-hero">
+    <h1>Welcome, {{ user.username }}!</h1>
+    <p>Choose a budget planner to get started with your personalized financial planning experience</p>
+  </div>
+
+  <div class="planner-cards">
+    <div class="planner-card">
+      <div class="thumb home"></div>
+      <div class="body">
+        <h3>🏠 Home Budget Planner</h3>
+        <p>Plan your interior design budget efficiently with AI-powered recommendations for furniture, lighting, and more.</p>
+        <a href="/home-planner" class="btn btn-primary" style="display:block; text-align:center;">Get Started</a>
+      </div>
+    </div>
+    <div class="planner-card">
+      <div class="thumb party"></div>
+      <div class="body">
+        <h3>🎉 Party Budget Planner</h3>
+        <p>Plan your perfect event with budget allocations for venue, catering, decorations, and entertainment.</p>
+        <a href="/party-planner" class="btn btn-primary" style="display:block; text-align:center;">Get Started</a>
+      </div>
+    </div>
+    <div class="planner-card">
+      <div class="thumb jewelry"></div>
+      <div class="body">
+        <h3>💎 Jewelry Budget Planner</h3>
+        <p>Find the ideal jewelry pieces for any occasion that match your outfit and stay within your budget.</p>
+        <a href="/jewelry-planner" class="btn btn-primary" style="display:block; text-align:center;">Get Started</a>
+      </div>
+    </div>
+  </div>
+
+  <div style="text-align:center; margin-bottom: 20px;">
+    <a href="/history" class="btn btn-secondary" style="background: var(--orange); color:white;">View All Recommendation History</a>
+  </div>
+
+  <div class="recent-activity">
+    <div class="panel-title">Recent Activity</div>
+    {% if history %}
+      {% for item in history %}
+      <div class="activity-item">
+        <div>
+          <strong>
+            {% if item.recommendation_type == 'home' %}🏠 Home Budget Plan
+            {% elif item.recommendation_type == 'party' %}🎉 Party Budget Plan
+            {% else %}💎 Jewelry Budget Plan{% endif %}
+          </strong>
+          <div class="meta">{{ item.result_summary }}</div>
+        </div>
+        <div class="meta">{{ item.timestamp[:16].replace('T', ' ') }}</div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="activity-item"><span>No recommendations yet — try one of the planners above!</span></div>
+    {% endif %}
+  </div>
+
+  <footer>
+    <div class="copyright">&copy; 2026 PocketSmart. All rights reserved.</div>
+  </footer>
+</body>
+</html>

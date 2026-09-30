@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+jinja2
+python-multipart
+pydantic[email]
+passlib[bcrypt]
+bcrypt<4.1
+python-jose[cryptography]
+python-dotenv
+google-generativeai
+Pillow

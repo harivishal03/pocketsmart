@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Create Account - PocketSmart</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <div class="auth-wrap">
+    <div class="auth-title">PocketSmart</div>
+    <div class="auth-subtitle">AI-Powered Budget Planning</div>
+
+    <div class="auth-card">
+      <h2>Create Your Account</h2>
+      <div id="error-box" class="error-msg" style="display:none;"></div>
+      <form id="register-form">
+        <div class="field">
+          <label>Username</label>
+          <input type="text" name="username" placeholder="Choose a username" required />
+        </div>
+        <div class="field">
+          <label>Email</label>
+          <input type="email" name="email" placeholder="Enter your email" required />
+        </div>
+        <div class="field">
+          <label>Full Name (optional)</label>
+          <input type="text" name="full_name" placeholder="Your full name" />
+        </div>
+        <div class="field">
+          <label>Password</label>
+          <input type="password" name="password" placeholder="Create a strong password" required />
+        </div>
+        <div class="field">
+          <label>Confirm Password</label>
+          <input type="password" id="confirm_password" placeholder="Confirm your password" required />
+        </div>
+        <button type="submit" class="btn btn-primary">Create Account</button>
+      </form>
+      <div class="auth-footer">Already have an account? <a href="/login" style="color:var(--navy); font-weight:600;">Sign In</a></div>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById("register-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const errorBox = document.getElementById("error-box");
+      errorBox.style.display = "none";
+
+      const password = e.target.password.value;
+      const confirm = document.getElementById("confirm_password").value;
+      if (password !== confirm) {
+        errorBox.textContent = "Passwords do not match.";
+        errorBox.style.display = "block";
+        return;
+      }
+
+      const payload = {
+        username: e.target.username.value,
+        email: e.target.email.value,
+        full_name: e.target.full_name.value || null,
+        password: password,
+      };
+
+      try {
+        const res = await fetch("/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        if (res.ok) {
+          window.location.href = "/login";
+        } else {
+          const data = await res.json().catch(() => ({}));
+          errorBox.textContent = data.detail || "Registration failed.";
+          errorBox.style.display = "block";
+        }
+      } catch (err) {
+        errorBox.textContent = "Something went wrong. Please try again.";
+        errorBox.style.display = "block";
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sign In - PocketSmart</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <div class="auth-wrap">
+    <div class="auth-title">PocketSmart</div>
+    <div class="auth-subtitle">AI-Powered Budget Planning</div>
+
+    <div class="auth-card">
+      <h2>Welcome Back</h2>
+      <div id="error-box" class="error-msg" style="display:none;"></div>
+      <form id="login-form">
+        <div class="field">
+          <label>Username</label>
+          <input type="text" name="username" placeholder="Enter your username" required />
+        </div>
+        <div class="field">
+          <label>Password</label>
+          <input type="password" name="password" placeholder="Enter your password" required />
+        </div>
+        <button type="submit" class="btn btn-primary">Sign In &rarr;</button>
+      </form>
+      <div class="auth-footer">Don't have an account? <a href="/register" style="color:var(--navy); font-weight:600;">Create Account</a></div>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById("login-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const form = new FormData(e.target);
+      const errorBox = document.getElementById("error-box");
+      errorBox.style.display = "none";
+
+      try {
+        const res = await fetch("/login", { method: "POST", body: form, redirect: "manual" });
+        if (res.type === "opaqueredirect" || res.status === 302 || res.ok) {
+          window.location.href = "/dashboard";
+        } else {
+          const data = await res.json().catch(() => ({}));
+          errorBox.textContent = data.detail || "Login failed. Please check your credentials.";
+          errorBox.style.display = "block";
+        }
+      } catch (err) {
+        errorBox.textContent = "Something went wrong. Please try again.";
+        errorBox.style.display = "block";
+      }
+    });
+  </script>
+</body>
+</html>

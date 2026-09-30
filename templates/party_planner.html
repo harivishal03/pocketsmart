@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Party Budget Planner - PocketSmart</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <div class="navbar">
+    <div class="brand"><span class="chip"></span> PocketSmart</div>
+    <nav>
+      <a href="/dashboard">Dashboard</a>
+      <a href="/home-planner">Home Budget</a>
+      <a href="/party-planner" style="text-decoration:underline;">Party Budget</a>
+      <a href="/jewelry-planner">Jewelry Budget</a>
+      <a href="/history">History</a>
+      <a href="/logout">Logout</a>
+    </nav>
+  </div>
+
+  <div class="page-header">
+    <h1>Party Budget Planner</h1>
+    <p>Plan your perfect event with AI-powered budget recommendations</p>
+  </div>
+
+  <div class="form-wrap">
+    <form id="party-form">
+      <div class="panel">
+        <h3>💰 Basic Information</h3>
+        <div class="row">
+          <div class="field">
+            <label>Total Budget (₹)</label>
+            <input type="number" name="total_budget" min="0" step="0.01" required />
+          </div>
+          <div class="field">
+            <label>Number of Guests</label>
+            <input type="number" name="num_guests" min="1" value="10" required />
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>🎈 Event Details</h3>
+        <div class="row">
+          <div class="field">
+            <label>Party Type</label>
+            <input type="text" name="party_type" placeholder="e.g. Birthday, Wedding, Corporate" required />
+          </div>
+          <div class="field">
+            <label>Venue Type</label>
+            <input type="text" name="venue_type" placeholder="e.g. Home, Banquet Hall, Outdoor" />
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>🎁 Party Needs</h3>
+        <div class="checkbox-row">
+          <label><input type="checkbox" name="needs_catering" checked /> Catering</label>
+          <label><input type="checkbox" name="needs_decoration" checked /> Decoration</label>
+          <label><input type="checkbox" name="needs_entertainment" checked /> Entertainment</label>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>💬 Additional Requirements</h3>
+        <div class="field">
+          <textarea name="additional_requirements" placeholder="Special requests, themes, dietary restrictions, etc."></textarea>
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary submit-btn">📄 Generate Budget Plan</button>
+    </form>
+  </div>
+
+  <div id="results"></div>
+
+  <script>
+    const form = document.getElementById("party-form");
+    const resultsDiv = document.getElementById("results");
+
+    function inr(n) {
+      return "₹" + Number(n || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function renderResult(result) {
+      let html = `
+        <div class="result-header"><span>Your Party Budget Plan</span></div>
+        <div class="result-body">
+          <div class="budget-summary">
+            <span><strong>Total Budget:</strong> ${inr(result.total_budget)}</span>
+            <span><strong>Remaining Budget:</strong> ${inr(result.remaining_budget)}</span>
+          </div>
+      `;
+
+      (result.budget_breakdown || []).forEach((cat) => {
+        html += `<div class="category-block">
+          <div class="category-title">${cat.category}</div>
+          <div class="category-alloc">Allocation: ${inr(cat.allocation)}</div>`;
+        (cat.items || []).forEach((item) => {
+          html += `<div class="item-row">
+            <div class="item-top"><span>${item.name || ""}</span><span>${inr(item.estimated_price)}</span></div>
+            <div class="item-desc">${item.description || ""} ${item.quantity ? "· Qty: " + item.quantity : ""}</div>`;
+          if (item.shopping_links) {
+            html += `<div class="shop-links">`;
+            for (const [site, url] of Object.entries(item.shopping_links)) {
+              html += `<a href="${url}" target="_blank" rel="noopener">${site}</a>`;
+            }
+            html += `</div>`;
+          }
+          html += `</div>`;
+        });
+        html += `</div>`;
+      });
+
+      if (result.venue_suggestions && result.venue_suggestions.length) {
+        html += `<h3 style="color:var(--navy-dark); font-size:15px;">📍 Venue Suggestions</h3>`;
+        result.venue_suggestions.forEach((v) => {
+          html += `<div class="item-row">
+            <div class="item-top"><span>${v.name || ""}</span><span>${inr(v.estimated_cost)}</span></div>
+            <div class="item-desc">Type: ${v.type || "-"} · Capacity: ${v.capacity || "-"}</div>`;
+          if (v.search_links) {
+            html += `<div class="shop-links">`;
+            for (const [site, url] of Object.entries(v.search_links)) {
+              html += `<a href="${url}" target="_blank" rel="noopener">${site}</a>`;
+            }
+            html += `</div>`;
+          }
+          html += `</div>`;
+        });
+      }
+
+      if (result.additional_suggestions && result.additional_suggestions.length) {
+        html += `<h3 style="color:var(--navy-dark); font-size:15px;">💡 Additional Suggestions</h3><ul class="suggestions-list">`;
+        result.additional_suggestions.forEach((s) => (html += `<li>✅ ${s}</li>`));
+        html += `</ul>`;
+      }
+
+      html += `</div>`;
+      resultsDiv.innerHTML = html;
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      resultsDiv.innerHTML = `<div class="loading">Generating your party budget plan...</div>`;
+
+      const fd = new FormData(form);
+      const payload = {
+        total_budget: parseFloat(fd.get("total_budget") || 0),
+        num_guests: parseInt(fd.get("num_guests") || 1),
+        party_type: fd.get("party_type") || "",
+        venue_type: fd.get("venue_type") || null,
+        needs_catering: fd.get("needs_catering") === "on",
+        needs_decoration: fd.get("needs_decoration") === "on",
+        needs_entertainment: fd.get("needs_entertainment") === "on",
+        additional_requirements: fd.get("additional_requirements") || null,
+      };
+
+      try {
+        const res = await fetch("/party-budget", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify(payload),
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          resultsDiv.innerHTML = `<div class="error-box">${err.detail || "Something went wrong. Please try again."}</div>`;
+          return;
+        }
+        const result = await res.json();
+        renderResult(result);
+      } catch (err) {
+        resultsDiv.innerHTML = `<div class="error-box">Network error. Please try again.</div>`;
+      }
+    });
+  </script>
+</body>
+</html>

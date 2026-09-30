@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Home Interior Budget Planner - PocketSmart</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <div class="navbar">
+    <div class="brand"><span class="chip"></span> PocketSmart</div>
+    <nav>
+      <a href="/dashboard">Dashboard</a>
+      <a href="/home-planner" style="text-decoration:underline;">Home Budget</a>
+      <a href="/party-planner">Party Budget</a>
+      <a href="/jewelry-planner">Jewelry Budget</a>
+      <a href="/history">History</a>
+      <a href="/logout">Logout</a>
+    </nav>
+  </div>
+
+  <div class="page-header">
+    <h1>Home Interior Budget Planner</h1>
+    <p>Create a customized budget plan for your dream home interior</p>
+  </div>
+
+  <div class="form-wrap">
+    <form id="home-form">
+      <div class="panel">
+        <h3>💰 Budget Details</h3>
+        <div class="field">
+          <label>Total Budget (₹)</label>
+          <input type="number" name="total_budget" min="0" step="0.01" required />
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>💡 Fixtures &amp; Furniture</h3>
+        <div class="row">
+          <div class="field">
+            <label>Number of Lights/Fixtures</label>
+            <input type="number" name="num_lights" min="0" value="0" />
+          </div>
+          <div class="field">
+            <label>Number of Ceiling Fans</label>
+            <input type="number" name="num_fans" min="0" value="0" />
+          </div>
+        </div>
+        <div class="row">
+          <div class="field">
+            <label>Number of Furniture Pieces</label>
+            <input type="number" name="num_furniture" min="0" value="0" />
+          </div>
+          <div class="field">
+            <label>Number of Dining Tables</label>
+            <input type="number" name="num_dining_tables" min="0" value="0" />
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>🏠 Rooms to Include</h3>
+        <div class="checkbox-row">
+          <label><input type="checkbox" name="has_living_room" checked /> Living Room</label>
+          <label><input type="checkbox" name="has_kitchen" checked /> Kitchen</label>
+          <label><input type="checkbox" name="has_bedroom" /> Bedroom</label>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>📝 Additional Information</h3>
+        <div class="field">
+          <label>Special Requirements or Preferences</label>
+          <textarea name="additional_requirements" placeholder="Any specific requirements or preferences..."></textarea>
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary submit-btn">📄 Generate Recommendations</button>
+    </form>
+  </div>
+
+  <div id="results"></div>
+
+  <script>
+    const form = document.getElementById("home-form");
+    const resultsDiv = document.getElementById("results");
+
+    function inr(n) {
+      return "₹" + Number(n || 0).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function renderResult(result) {
+      let html = `
+        <div class="result-header"><span>Your Personalized Budget Plan</span></div>
+        <div class="result-body">
+          <div class="budget-summary">
+            <span><strong>Total Budget:</strong> ${inr(result.total_budget)}</span>
+            <span><strong>Remaining Budget:</strong> ${inr(result.remaining_budget)}</span>
+          </div>
+      `;
+
+      (result.budget_breakdown || []).forEach((cat) => {
+        html += `<div class="category-block">
+          <div class="category-title">${cat.category}</div>
+          <div class="category-alloc">Allocation: ${inr(cat.allocation)}</div>`;
+        (cat.items || []).forEach((item) => {
+          html += `<div class="item-row">
+            <div class="item-top"><span>${item.name || ""}</span><span>${inr(item.estimated_price)}</span></div>
+            <div class="item-desc">${item.description || ""} ${item.quantity ? "· Qty: " + item.quantity : ""}</div>`;
+          if (item.shopping_links) {
+            html += `<div class="shop-links">`;
+            for (const [site, url] of Object.entries(item.shopping_links)) {
+              html += `<a href="${url}" target="_blank" rel="noopener">${site}</a>`;
+            }
+            html += `</div>`;
+          }
+          html += `</div>`;
+        });
+        html += `</div>`;
+      });
+
+      if (result.additional_suggestions && result.additional_suggestions.length) {
+        html += `<h3 style="color:var(--navy-dark); font-size:15px;">💡 Additional Suggestions</h3><ul class="suggestions-list">`;
+        result.additional_suggestions.forEach((s) => (html += `<li>✅ ${s}</li>`));
+        html += `</ul>`;
+      }
+
+      html += `</div>`;
+      resultsDiv.innerHTML = html;
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      resultsDiv.innerHTML = `<div class="loading">Generating your personalized recommendations...</div>`;
+
+      const fd = new FormData(form);
+      const payload = {
+        total_budget: parseFloat(fd.get("total_budget") || 0),
+        num_lights: parseInt(fd.get("num_lights") || 0),
+        num_fans: parseInt(fd.get("num_fans") || 0),
+        num_furniture: parseInt(fd.get("num_furniture") || 0),
+        num_dining_tables: parseInt(fd.get("num_dining_tables") || 0),
+        has_living_room: fd.get("has_living_room") === "on",
+        has_kitchen: fd.get("has_kitchen") === "on",
+        has_bedroom: fd.get("has_bedroom") === "on",
+        additional_requirements: fd.get("additional_requirements") || null,
+      };
+
+      try {
+        const res = await fetch("/home-budget", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify(payload),
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          resultsDiv.innerHTML = `<div class="error-box">${err.detail || "Something went wrong. Please try again."}</div>`;
+          return;
+        }
+        const result = await res.json();
+        renderResult(result);
+      } catch (err) {
+        resultsDiv.innerHTML = `<div class="error-box">Network error. Please try again.</div>`;
+      }
+    });
+  </script>
+</body>
+</html>
